@@ -3,23 +3,17 @@ package com.example.myapplication;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.viewpager2.widget.ViewPager2;
 
 import android.Manifest;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.nfc.Tag;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.util.Patterns;
 import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,18 +21,11 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import android.view.View;
 
-
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,60 +33,61 @@ public class MainActivity extends AppCompatActivity {
     private int index = 0;
     private static final int PERMISSION_CODES = 1234;
     private static final int CAPTURE_CODE = 1001;
-    ArrayList<String> listImage, list_Image;
-    Button add_url_btn, take_photo_btn;
+    ArrayList<String> listImage;
+    Button add_url_btn, take_photo_btn, next, previous;
     EditText inputURL;
     String URL;
     Uri image_uri;
-    MyDatabase myDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        listImage = new ArrayList<String>();
-
         imageView = findViewById(R.id.rv_images);
-        listImage.add("https://kynguyenlamdep.com/wp-content/uploads/2022/06/hinh-nen-doraemon-de-thuong.jpg") ;
-        listImage.add("https://24hstore.vn/upload_images/images/SEO/AUDIT/hinh-nen-iphone-doc-dep.jpg") ;
-        listImage.add("https://img4.thuthuatphanmem.vn/uploads/2020/07/04/anh-nen-cute-hoat-hinh-cho-dien-thoai_061912395.jpg") ;
-        listImage.add("https://cdn.24h.com.vn/upload/1-2021/images/2021-02-26/image50-1614333620-651-width500height800.jpg") ;
-
-
-        
-
-        MyDatabase myDB = new MyDatabase(MainActivity.this);
-
-        storeDataInArrays();
-
-        loadImage();
-
         take_photo_btn = findViewById(R.id.take_photo_btn);
         add_url_btn = findViewById(R.id.addLink);
         inputURL = findViewById(R.id.linkInput);
+        next = findViewById(R.id.forward_btn);
+        previous = findViewById(R.id.backward_btn);
 
+        listImage = new ArrayList<String>();
+
+        next.setOnClickListener(v -> {
+            index++;
+            if(index == listImage.size()){
+                index = 0;
+            }
+
+            loadImage();
+        });
+
+        previous.setOnClickListener(v -> {
+            index--;
+            if(index == 0){
+                index = listImage.size()-1;
+            }
+            loadImage();
+        });
 
         add_url_btn.setOnClickListener(v -> {
 
             URL = inputURL.getText().toString().trim();
 
-//            boolean checkUrl = IsValidUrl(URL);
+            boolean checkUrl = IsValidUrl(URL);
 
-//            if(checkUrl){
+            if(checkUrl){
                 listImage.add(URL);
-                Log.d("", Arrays.toString(listImage.toArray()));
-                Log.d("", listImage.get(listImage.size()-1));
-
+//                Log.d("", Arrays.toString(listImage.toArray()));
+//                Log.d("", listImage.get(listImage.size()-1));
                 Glide.with(MainActivity.this)
                         .load(listImage.get(listImage.size()-1))
                         .centerCrop()
-                        .override(600, 1000)
                         .into(imageView);
-
+                MyDatabase myDB = new MyDatabase(MainActivity.this);
                 myDB.addURL(listImage.get(listImage.size()-1));
 
-//            }
+            }
         });
 
         take_photo_btn.setOnClickListener(v -> {
@@ -118,30 +106,24 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        storeDataInArrays();
+
+        loadImage();
+
     }
 
     private void loadImage() {
+        if (listImage.size()<=0){
+            Glide.with(MainActivity.this)
+                    .load("https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty-300x240.jpg")
+                    .centerCrop()
+                    .into(imageView);
+        }
+
         Glide.with(MainActivity.this)
                 .load(listImage.get(index))
                 .centerCrop()
-                .override(600, 1000)
                 .into(imageView);
-    }
-
-    public void nextImage(View view){
-        index++;
-        if(index >= listImage.size())
-            index = 0;
-
-        loadImage();
-    }
-
-    public void previousImage(View view){
-        index--;
-        if(index <= 1)
-            index = listImage.size()-1;
-
-        loadImage();
     }
 
     private void openCamera() {
@@ -174,29 +156,31 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if(resultCode == RESULT_OK){
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
             imageView.setImageURI(image_uri);
         }
     }
 
-    private boolean IsValidUrl(String urlString) {
 
-        String WebUrl = "^((ftp|http|https):\\/\\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\\.[a-zA-Z]+)+((\\/)[\\w#]+)*(\\/\\w+\\?[a-zA-Z0-9_]+=\\w+(&[a-zA-Z0-9_]+=\\w+)*)?$";
+    private boolean IsValidUrl(String URL) {
 
-        if (urlString.length() > 0) {
-            if (!urlString.matches(WebUrl)) {
-                //validation msg
-                inputURL.requestFocus();
-                inputURL.setError("It isn't URL!");
-                return false;
-            }else{
-                return true;
+        String FileExtension = "([^\\s]+(\\.(?i)(jpg|png|gif|bmp))$)";
+
+        if (URL.length() > 0){
+            if(URLUtil.isNetworkUrl(URL)){
+                if(!URL.matches(FileExtension)){
+                    inputURL.requestFocus();
+                    inputURL.setError("It isn't image URL!");
+                }else{
+                    Toast.makeText(MainActivity.this, "OK!", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
             }
-        }else{
-            inputURL.requestFocus();
-            inputURL.setError("Fill cannot be empty!");
-            return false;
         }
+        inputURL.requestFocus();
+        inputURL.setError("It isn't image URL!");
+        return false;
     }
 
     void storeDataInArrays() {
@@ -206,8 +190,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "No data", Toast.LENGTH_SHORT).show();
         }else{
             while(cursor.moveToNext()){
-                list_Image = new ArrayList<>();
-                list_Image.add(cursor.getString(1));
+                listImage.add(cursor.getString(1));
             }
         }
     }
