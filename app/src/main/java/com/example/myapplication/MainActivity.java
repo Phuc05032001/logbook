@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
         previous.setOnClickListener(v -> {
             index--;
-            if(index == 0){
+            if(index < 0){
                 index = listImage.size()-1;
             }
             loadImage();
