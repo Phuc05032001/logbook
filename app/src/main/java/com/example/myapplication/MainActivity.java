@@ -1,9 +1,5 @@
 package com.example.myapplication;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -13,19 +9,19 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
-import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         inputURL = findViewById(R.id.linkInput);
         next = findViewById(R.id.forward_btn);
         previous = findViewById(R.id.backward_btn);
+
 
         listImage = new ArrayList<String>();
 
@@ -78,8 +75,6 @@ public class MainActivity extends AppCompatActivity {
 
             if(checkUrl){
                 listImage.add(URL);
-//                Log.d("", Arrays.toString(listImage.toArray()));
-//                Log.d("", listImage.get(listImage.size()-1));
                 Glide.with(MainActivity.this)
                         .load(listImage.get(listImage.size()-1))
                         .centerCrop()
@@ -113,17 +108,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadImage() {
-        if (listImage.size()<=0){
+        if (listImage.size() <= 0){
+
             Glide.with(MainActivity.this)
                     .load("https://www.generationsforpeace.org/wp-content/uploads/2018/03/empty-300x240.jpg")
                     .centerCrop()
                     .into(imageView);
+        }else{
+            Glide.with(MainActivity.this)
+                    .load(listImage.get(index))
+                    .centerCrop()
+                    .into(imageView);
         }
-
-        Glide.with(MainActivity.this)
-                .load(listImage.get(index))
-                .centerCrop()
-                .into(imageView);
     }
 
     private void openCamera() {
